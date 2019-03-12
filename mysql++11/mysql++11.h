@@ -32,6 +32,8 @@ STD_OPTIONAL	: using std::optional in C++17 if defined, or std::experimental::op
 #include <vector>
 #include <memory>
 #include <stdarg.h>
+#include <regex>
+#include <stdexcept>
 
 #include "polyfill/function_traits.h"
 #include "polyfill/datetime.h"
@@ -567,10 +569,24 @@ namespace daotk {
 		};
 
 		struct connect_options {
-			connect_options( const std::string &_s = "", const std::string _u = "", const std::string _p = "", const std::string _db = "", 
+			connect_options() = default;
+			connect_options( const std::string &_s, const std::string _u, const std::string _p, const std::string _db = "", 
 					unsigned int _to = 0, bool _ar = false, const std::string _ic = "", const std::string _c = "", int _port = 0)
 				: server(_s), username(_u), password(_p), dbname(_db), timeout(_to), autoreconnect(_ar), init_command(_ic), charset(_c), port(_port)
 			{}
+
+			connect_options( const std::string &url, const std::string &_c = "UTF8mb4", int timeout = 0, bool autoreconnect = false) : timeout(timeout), autoreconnect(autoreconnect), charset(_c)  {
+				std::smatch m;
+				const std::regex urlre("mysql\\://(?:(.*?)(?:\\:(.*?)){0,1}@){0,1}([\\w.\\-]*?)(?:\\:(\\d+)){0,1}(?:/([\\w]+){0,1}){0,1}");
+				bool r = std::regex_match(url, m, urlre);
+				if(!r)
+					throw std::runtime_error("MYSQL: Malformed connection URL");
+				server = m[3].str();
+				username = m[1].str();
+				password = m[2].str();
+				port = std::atoi(m[4].str().c_str());
+				dbname = m[5].str();
+			}
 
 			std::string server;
 			std::string username;
@@ -683,6 +699,14 @@ namespace daotk {
 
 			const char* error_message() const {
 				return mysql_error(my_conn);
+			}
+
+			std::string escape_string(const std::string &str) {
+				std::string out(str.length()*2, 0);
+
+				auto len = mysql_real_escape_string(my_conn, const_cast<char *>(out.c_str()), str.c_str(), out.length());
+				out.resize(len);
+				return std::move(out);
 			}
 
 		protected:
