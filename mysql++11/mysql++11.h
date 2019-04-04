@@ -704,7 +704,7 @@ namespace daotk {
 			std::string escape_string(const std::string &str) {
 				std::string out(str.length()*2, 0);
 
-				auto len = mysql_real_escape_string(my_conn, const_cast<char *>(out.c_str()), str.c_str(), out.length());
+				auto len = mysql_real_escape_string(my_conn, const_cast<char *>(out.c_str()), str.c_str(), str.length());
 				out.resize(len);
 				return std::move(out);
 			}
