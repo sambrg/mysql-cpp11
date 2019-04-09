@@ -575,7 +575,7 @@ namespace daotk {
 				: server(_s), username(_u), password(_p), dbname(_db), timeout(_to), autoreconnect(_ar), init_command(_ic), charset(_c), port(_port)
 			{}
 
-			connect_options( const std::string &url, const std::string &_c = "UTF8mb4", int timeout = 0, bool autoreconnect = false) : timeout(timeout), autoreconnect(autoreconnect), charset(_c)  {
+			connect_options( const std::string &url, const std::string &_c = "UTF8mb4", int timeout = 0, bool autoreconnect = true) : timeout(timeout), autoreconnect(autoreconnect), charset(_c)  {
 				std::smatch m;
 				const std::regex urlre("mysql\\://(?:(.*?)(?:\\:(.*?)){0,1}@){0,1}([\\w.\\-]*?)(?:\\:(\\d+)){0,1}(?:/([\\w]+){0,1}){0,1}");
 				bool r = std::regex_match(url, m, urlre);
@@ -702,7 +702,7 @@ namespace daotk {
 			}
 
 			std::string escape_string(const std::string &str) {
-				std::string out(str.length()*2, 0);
+				std::string out(str.length()*2+1, 0);
 
 				auto len = mysql_real_escape_string(my_conn, const_cast<char *>(out.c_str()), str.c_str(), str.length());
 				out.resize(len);
